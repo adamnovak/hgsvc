@@ -1,12 +1,14 @@
 #!/bin/bash
 
+set -e
+
 base=$1
 threads=20
 ref=./hg38.fa
 
-chroms=$(cat $ref.fai | cut -f 1)
+#chroms=$(cat $ref.fai | cut -f 1)
 #chroms=$(for i in $(seq 1 22; echo X; echo Y); do echo chr${i}; done)
-#chroms=chr21
+chroms=chr21
 
 echo "constructing HG00514"
 echo $chroms | tr ' ' '\n' | parallel -j $threads "vg construct -r $ref -v ./HGSVC.HG00514.vcf.gz -R {} -C -m 32 -a -f > $base-add0.{}.vg"

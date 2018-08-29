@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 echo "constructing"
 time vg construct -r ~/graphs/human/hg38.fa -p -a -v ~/graphs/hgsvc/haps/HGSVC.haps.vcf.gz -f -m 128 >HGSVC.haps.vg

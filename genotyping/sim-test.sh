@@ -1,8 +1,9 @@
+#!/bin/bash
+set -e
+
 # Simulate reads from a sample in the hgsvc graph, map them back, then 
 # run vg call to make a vcf. requires that graphs have been made by running
 # ./make-vcf.sh and ./do-by-chrom.sh hgsvc_v1 in ../haps/
-
-#!/bin/bash
 
 usage() {
     # Print usage to stderr
@@ -68,10 +69,10 @@ OS=./${NAME}
 if [ $SIM == "1" ]
 then
 	 # Make a graph for each haplotype thread of SAMPLE to simulate from
-	 rm -rf ${JS} haplo_${NAME}.log; toil-vg construct ${JS} ${OS} --realTimeLogging --vcf ${SAMPLE_VCF} --fasta ${HG38} --haplo_sample ${SAMPLE} --xg_index --regions ${CHROM} --out_name hgsvc_baseline --logFile haplo_${NAME}.log --maxCores $THREADS --flat_alts
+	 rm -rf ${JS} haplo_${NAME}.log; toil-vg construct ${JS} ${OS} --container None --realTimeLogging --vcf ${SAMPLE_VCF} --fasta ${HG38} --haplo_sample ${SAMPLE} --xg_index --regions ${CHROM} --out_name hgsvc_baseline --logFile haplo_${NAME}.log --maxCores $THREADS --flat_alts
 
 	 # Simulate some reads for this sample using thread graphs made above
-	 rm -rf ${JS} sim_${NAME}.log; toil-vg sim ${JS} ${OS}/hgsvc_baseline_${SAMPLE}_haplo_thread_0.xg ${OS}/hgsvc_baseline_${SAMPLE}_haplo_thread_1.xg ${NUMREADS} ${OS} --realTimeLogging --fastq ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/131219_D00360_005_BH814YADXX/Project_RM8398/Sample_U5a/U5a_AGTCAA_L002_R1_007.fastq.gz --gam  --out_name ${GAM_PREFIX} --fastq_out --sim_chunks 20 --logFile sim_${NAME}.log --seed 23 --maxCores $THREADS
+	 rm -rf ${JS} sim_${NAME}.log; toil-vg sim ${JS} ${OS}/hgsvc_baseline_${SAMPLE}_haplo_thread_0.xg ${OS}/hgsvc_baseline_${SAMPLE}_haplo_thread_1.xg ${NUMREADS} ${OS} --container None --realTimeLogging --fastq ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/131219_D00360_005_BH814YADXX/Project_RM8398/Sample_U5a/U5a_AGTCAA_L002_R1_007.fastq.gz --gam  --out_name ${GAM_PREFIX} --fastq_out --sim_chunks 20 --logFile sim_${NAME}.log --seed 23 --maxCores $THREADS
 
 	 # Make a version of the reads for bwa
 	 bgzip -dc ${OS}/${GAM_PREFIX}.fq.gz - | sed 's/fragment_\([0-9]*\)_[0-9]/fragment_\1/g' | bgzip > ${OS}/${GAM_PREFIX}_bwa.fq.gz &
@@ -93,7 +94,7 @@ then
 fi
 
 # run the calling and vcf evaluation
-rm -rf ${JS} calleval_${NAME}.log; toil-vg calleval ${JS} ${OS}/  --realTimeLogging --chroms ${CHROM} --gams ${OS}/${GAM_PREFIX}_remapped_sorted.gam ${OS}/${GAM_PREFIX}_remapped_primary_sorted.gam --gam_names hgsvc primary --xg_paths ${HGSVC_BASE}.xg ./controls/primary.xg --vcfeval_fasta ${HG38} --vcfeval_baseline ${SAMPLE_VCF}  --vcfeval_opts " --squash-ploidy --Xmax-length 15000" --logFile calleval_${NAME}.log --call  --sample_name ${SAMPLE} --workDir . --maxCores $THREADS --recall --vcfeval_bed_regions $REGIONS --sveval 
+rm -rf ${JS} calleval_${NAME}.log; toil-vg calleval ${JS} ${OS}/ --container None --realTimeLogging --chroms ${CHROM} --gams ${OS}/${GAM_PREFIX}_remapped_sorted.gam ${OS}/${GAM_PREFIX}_remapped_primary_sorted.gam --gam_names hgsvc primary --xg_paths ${HGSVC_BASE}.xg ./controls/primary.xg --vcfeval_fasta ${HG38} --vcfeval_baseline ${SAMPLE_VCF}  --vcfeval_opts " --squash-ploidy --Xmax-length 15000" --logFile calleval_${NAME}.log --call  --sample_name ${SAMPLE} --workDir . --maxCores $THREADS --recall --vcfeval_bed_regions $REGIONS --sveval 
 
 # disable freebayes and platypus for now.  they often produce no calls which crashes calleval
 #--bams ${OS}/${GAM_PREFIX}_bwa_remapped.bam --bam_names bwa  --freebayes --platypus

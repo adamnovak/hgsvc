@@ -1,13 +1,14 @@
-
 #!/bin/bash
+
+set -e
 
 base=$1
 ref=./hg38.fa
 vars=./HGSVC.haps.vcf.gz
 
-chroms=$(cat $ref.fai | cut -f 1)
+#chroms=$(cat $ref.fai | cut -f 1)
 #chroms=$(for i in $(seq 1 22; echo X; echo Y); do echo chr${i}; done)
-#chroms=chr21
+chroms=chr21
 
 echo "constructing"
 echo $chroms | tr ' ' '\n' | parallel -j 14 "vg construct -r $ref -v $vars -R {} -C -m 32 -a -f > $base.{}.vg"
