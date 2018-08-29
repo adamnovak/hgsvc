@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 base=$1
 ref=./hg38.fa
