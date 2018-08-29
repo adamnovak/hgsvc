@@ -25,8 +25,14 @@ cp $base.mapping $base.mapping.backup
 echo "indexing haplotypes"
 echo $chroms | tr ' ' '\n' | parallel -j 12 "vg index -x $base.{}.xg -G $base.{}.gbwt -v $vars -F $base.{}.threads $base.{}.vg"
 
-echo "merging GBWT"
-vg gbwt -m -f -o $base.all.gbwt $(for i in $chroms; do echo $base.$i.gbwt; done)
+chrom_count="$(echo $chroms | tr ' ' '\n' | wc -l)"
+if [[ "${chrom_count}" -gt "1" ]] ; then
+    echo "merging GBWT"
+    vg gbwt -m -f -o $base.all.gbwt $(for i in $chroms; do echo $base.$i.gbwt; done)
+else
+    echo "using only gbwt"
+    cp $base.$chroms.gbwt $base.all.gbwt
+fi
 
 echo "extracting threads as paths"
 for i in $chroms; do ( vg mod $(for f in $(vg paths -L -x $base.$i.xg ); do echo -n ' -r '$f; done) $base.$i.vg; vg paths -x $base.$i.xg -g $base.$i.gbwt -T -V ) | vg view -v - >$base.$i.threads.vg; done
