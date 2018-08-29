@@ -12,8 +12,8 @@ for i in `cat haps.urls`; do wget $i; done
 Make the graphs.  In both scripts, uncomment `chroms=chr21` and make sure `ref` path is valid
 
 ```
-./do-by-chroms.sh
-./do-by-add.sh
+./do-by-chrom.sh hgsvc_chr21.threads 
+./do-by-add.sh hgsvc_add_chr21  
 ```
 
 From `./genotyping`, make the control graphs (uncomment `chroms=chr21`)

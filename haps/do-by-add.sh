@@ -6,6 +6,11 @@ base=$1
 threads=20
 ref=./hg38.fa
 
+if [[ -z "$base" ]] ; then
+    echo "No base specified" 1>&2
+    exit 1
+fi
+
 #chroms=$(cat $ref.fai | cut -f 1)
 #chroms=$(for i in $(seq 1 22; echo X; echo Y); do echo chr${i}; done)
 chroms=chr21

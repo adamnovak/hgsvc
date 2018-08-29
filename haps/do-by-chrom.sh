@@ -1,10 +1,15 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 base=$1
 ref=./hg38.fa
 vars=./HGSVC.haps.vcf.gz
+
+if [[ -z "$base" ]] ; then
+    echo "No base specified" 1>&2
+    exit 1
+fi
 
 #chroms=$(cat $ref.fai | cut -f 1)
 #chroms=$(for i in $(seq 1 22; echo X; echo Y); do echo chr${i}; done)
@@ -15,7 +20,7 @@ echo $chroms | tr ' ' '\n' | parallel -j 14 "vg construct -r $ref -v $vars -R {}
 
 echo "node id unification"
 vg ids -j -m $base.mapping $(for i in $chroms; do echo $base.$i.vg; done)
-cp $base.mapping $.base.mapping.backup
+cp $base.mapping $base.mapping.backup
 
 echo "indexing haplotypes"
 echo $chroms | tr ' ' '\n' | parallel -j 12 "vg index -x $base.{}.xg -G $base.{}.gbwt -v $vars -F $base.{}.threads $base.{}.vg"

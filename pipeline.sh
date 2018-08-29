@@ -6,18 +6,24 @@ set -e
 cd haps
 
 # Grab the reference
+rm -f hg38.fa hg38.fa.gz
 wget "http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz"
 gzip -d "hg38.fa.gz"
 
 # Download the input haplotypes
-for i in `cat haps.urls`; do wget $i; done
+# TODO: These no longer exist at this location.
+#for i in `cat haps.urls`; do wget $i; done
+for FILENAME in `cat haps.urls | rev | cut -f1 -d'/' | rev` ; do
+    cp "/public/groups/cgl/graph-genomes/hickey/hgsvc/haps/${FILENAME}" "./${FILENAME}"
+done
+
 # Create a VCF from them
 ./make-vcf.sh
 
 # Make and index a graph with construct
-./do-by-chroms.sh
+./do-by-chrom.sh hgsvc_v1.threads
 # And with vg add
-./do-by-add.sh
+./do-by-add.sh hgsvc_add_chr21 
 
 cd ../genotyping
 
