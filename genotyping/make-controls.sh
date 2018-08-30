@@ -16,9 +16,11 @@ chroms=chr21
 rm -rf jsc ; toil-vg construct ./jsc ./controls --fasta ${HG38} --region ${chroms} --container None --realTimeLogging  --xg_index --gcsa_index --out_name hg38  --primary  --workDir . --gcsa_index_cores 20
 
 #Make a positive control graph and its indexes
-rm -rf jsc ; toil-vg construct ./jsc ./controls --fasta ${HG38} --vcf ../haps/HGSVC.HG00514.vcf.gz --pos_control HG00514 --region ${chroms} --container None --realTimeLogging  --xg_index --gcsa_index --out_name hgsvc.norm --flat_alts --normalize  --workDir . --gcsa_index_cores 20 --whole_genome_config --gbwt --gbwt_prune
+rm -rf jsc ; toil-vg construct ./jsc ./controls --fasta ${HG38} --vcf ../haps/HGSVC.HG00514.vcf.gz --pos_control HG00514 --region ${chroms} --container None --realTimeLogging  --xg_index --gcsa_index --out_name hgsvc.norm --flat_alts --normalize  --workDir . --gcsa_index_cores 20 --whole_genome_config --gbwt_index --gbwt_prune
 
 
-#Make a bwa index
-bwa index ${HG38} -p ./controls/hg38.fa
+if [[ ! -e ./controls/hg38.fa.bwt ]] ; then
+    #Make a bwa index
+    bwa index ${HG38} -p ./controls/hg38.fa
+fi
 

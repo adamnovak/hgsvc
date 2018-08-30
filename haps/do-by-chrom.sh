@@ -16,7 +16,7 @@ fi
 #chroms=$(for i in $(seq 1 22; echo X; echo Y); do echo chr${i}; done)
 chroms=chr21
 
-if [[ ! -e $base.threads.xg ]] ; do
+if [[ ! -e $base.threads.xg ]] ; then
     echo "constructing"
     echo $chroms | tr ' ' '\n' | parallel -j $threads "vg construct -r $ref -v $vars -R {} -C -m 32 -a -f > $base.{}.vg"
 
@@ -41,7 +41,7 @@ if [[ ! -e $base.threads.xg ]] ; do
 
     echo "re-indexing haps+threads"
     vg index -x $base.threads.xg $(for i in $chroms; do echo $base.$i.threads.vg; done)
-done    
+fi    
 
 if [[ ! -e  $base.threads.gcsa ]] ; then
     echo "pruning"
