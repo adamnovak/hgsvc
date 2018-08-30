@@ -3,6 +3,7 @@
 set -e
 
 base=$1
+threads=20
 ref=./hg38.fa
 vars=./HGSVC.haps.vcf.gz
 
@@ -17,14 +18,14 @@ chroms=chr21
 
 if [[ ! -e $base.threads.xg ]] ; do
     echo "constructing"
-    echo $chroms | tr ' ' '\n' | parallel -j 14 "vg construct -r $ref -v $vars -R {} -C -m 32 -a -f > $base.{}.vg"
+    echo $chroms | tr ' ' '\n' | parallel -j $threads "vg construct -r $ref -v $vars -R {} -C -m 32 -a -f > $base.{}.vg"
 
     echo "node id unification"
     vg ids -j -m $base.mapping $(for i in $chroms; do echo $base.$i.vg; done)
     cp $base.mapping $base.mapping.backup
 
     echo "indexing haplotypes"
-    echo $chroms | tr ' ' '\n' | parallel -j 12 "vg index -x $base.{}.xg -G $base.{}.gbwt -v $vars -F $base.{}.threads $base.{}.vg"
+    echo $chroms | tr ' ' '\n' | parallel -j $threads "vg index -x $base.{}.xg -G $base.{}.gbwt -v $vars -F $base.{}.threads $base.{}.vg"
 
     chrom_count="$(echo $chroms | tr ' ' '\n' | wc -l)"
     if [[ "${chrom_count}" -gt "1" ]] ; then
@@ -43,7 +44,11 @@ if [[ ! -e $base.threads.xg ]] ; do
 done    
 
 if [[ ! -e  $base.threads.gcsa ]] ; then
+    echo "pruning"
+    echo $chroms | tr ' ' '\n' | parallel -j $threads "vg prune -r $base.{}.threads.vg > $base.{}.threads.prune.vg"
+
     echo "building gcsa2 index"
     mkdir -p work
-    TMPDIR=. vg index -g $base.threads.gcsa -Z 4096 -k 16 -p -b work $(for i in $chroms; do echo $base.$i.threads.vg; done)
+    TMPDIR=. vg index  -g $base.threads.gcsa -Z 4096 -k 16 -b work -p -t $threads $(for i in $chroms; do echo $base.$i.threads.prune.vg; done)
+    rm -rf work *.prune.vg
 fi

@@ -38,7 +38,7 @@ if [[ ! -e $base.gcsa ]] ; then
     echo $chroms | tr ' ' '\n' | parallel -j $threads "vg prune -r $base.{}.vg > $base.{}.prune.vg"
 
     echo "gcsa indexing"
-    mkdir work
+    mkdir -p work
     vg index  -g $base.gcsa -Z 4096 -k 16 -b work -p -t $threads $(for i in $chroms; do echo $base.$i.prune.vg; done)
     rm -rf work *.prune.vg
 fi
