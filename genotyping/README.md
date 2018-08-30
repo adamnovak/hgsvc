@@ -12,7 +12,7 @@ for i in `cat haps.urls`; do wget $i; done
 Make the graphs.  In both scripts, uncomment `chroms=chr21` and make sure `ref` path is valid
 
 ```
-./do-by-chrom.sh hgsvc_chr21.threads 
+./do-by-chrom.sh hgsvc_chr21
 ./do-by-add.sh hgsvc_add_chr21  
 ```
 
