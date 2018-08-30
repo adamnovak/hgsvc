@@ -30,7 +30,7 @@ if [[ ! -e $base.xg ]] ; then
     cp $base.mapping $.base.mapping.backup
 
     echo "xg indexing"
-    vg index -x $base.xg -g $base.gcsa -k 16 -b work -p -t $threads $(for i in $chroms; do echo $base.$i.vg; done)
+    vg index -x $base.xg -b work -p -t $threads $(for i in $chroms; do echo $base.$i.vg; done)
 fi    
 
 if [[ ! -e $base.gcsa ]] ; then
