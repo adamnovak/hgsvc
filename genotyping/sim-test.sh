@@ -68,29 +68,43 @@ OS=./${NAME}
 
 if [ $SIM == "1" ]
 then
-	 # Make a graph for each haplotype thread of SAMPLE to simulate from
-	 rm -rf ${JS} haplo_${NAME}.log; toil-vg construct ${JS} ${OS} --container None --realTimeLogging --vcf ${SAMPLE_VCF} --fasta ${HG38} --haplo_sample ${SAMPLE} --xg_index --regions ${CHROM} --out_name hgsvc_baseline --logFile haplo_${NAME}.log --maxCores $THREADS --flat_alts
+    
+    if [[ ! -e ${OS}/${GAM_PREFIX}.fq.gz ]] ; then
 
-	 # Simulate some reads for this sample using thread graphs made above
-	 rm -rf ${JS} sim_${NAME}.log; toil-vg sim ${JS} ${OS}/hgsvc_baseline_${SAMPLE}_haplo_thread_0.xg ${OS}/hgsvc_baseline_${SAMPLE}_haplo_thread_1.xg ${NUMREADS} ${OS} --container None --realTimeLogging --fastq ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/131219_D00360_005_BH814YADXX/Project_RM8398/Sample_U5a/U5a_AGTCAA_L002_R1_007.fastq.gz --gam  --out_name ${GAM_PREFIX} --fastq_out --sim_chunks 20 --logFile sim_${NAME}.log --seed 23 --maxCores $THREADS
+        # Make a graph for each haplotype thread of SAMPLE to simulate from
+        rm -rf ${JS} haplo_${NAME}.log; toil-vg construct ${JS} ${OS} --container None --realTimeLogging --vcf ${SAMPLE_VCF} --fasta ${HG38} --haplo_sample ${SAMPLE} --xg_index --regions ${CHROM} --out_name hgsvc_baseline --logFile haplo_${NAME}.log --maxCores $THREADS --flat_alts
 
-	 # Make a version of the reads for bwa
-	 bgzip -dc ${OS}/${GAM_PREFIX}.fq.gz - | sed 's/fragment_\([0-9]*\)_[0-9]/fragment_\1/g' | bgzip > ${OS}/${GAM_PREFIX}_bwa.fq.gz &
+        # Simulate some reads for this sample using thread graphs made above
+        rm -rf ${JS} sim_${NAME}.log; toil-vg sim ${JS} ${OS}/hgsvc_baseline_${SAMPLE}_haplo_thread_0.xg ${OS}/hgsvc_baseline_${SAMPLE}_haplo_thread_1.xg ${NUMREADS} ${OS} --container None --realTimeLogging --fastq ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/131219_D00360_005_BH814YADXX/Project_RM8398/Sample_U5a/U5a_AGTCAA_L002_R1_007.fastq.gz --gam  --out_name ${GAM_PREFIX} --fastq_out --sim_chunks 20 --logFile sim_${NAME}.log --seed 23 --maxCores $THREADS
+        
+    fi
+
+    if [[ ! -e ${OS}/${GAM_PREFIX}_bwa.fq.gz ]] ; then
+        # Make a version of the reads for bwa
+        bgzip -dc ${OS}/${GAM_PREFIX}.fq.gz - | sed 's/fragment_\([0-9]*\)_[0-9]/fragment_\1/g' | bgzip > ${OS}/${GAM_PREFIX}_bwa.fq.gz
+    fi
 fi
 
 if [ $ALIGN == "1" ]
 then
-	 # Remap simulated reads to the full graph (takes about 3.5 hours on 32 cores)
-	 echo "Mapping simulated reads back to hgsvc graph"
-	 time vg map -d ${HGSVC_BASE} -f ${OS}/${GAM_PREFIX}.fq.gz -i  -t $THREADS > ${OS}/${GAM_PREFIX}_remapped.gam
-	 time vg gamsort ${OS}/${GAM_PREFIX}_remapped.gam -t $THREADS -i ${OS}/${GAM_PREFIX}_remapped_sorted.gam.gai >  ${OS}/${GAM_PREFIX}_remapped_sorted.gam
+    # Remap simulated reads to the full graph (takes about 3.5 hours on 32 cores)
+    echo "Mapping simulated reads back to hgsvc graph"
+     
+    if [[ ! -e ${OS}/${GAM_PREFIX}_remapped_sorted.gam ]] ; then
+        time vg map -d ${HGSVC_BASE} -f ${OS}/${GAM_PREFIX}.fq.gz -i  -t $THREADS > ${OS}/${GAM_PREFIX}_remapped.gam
+        time vg gamsort ${OS}/${GAM_PREFIX}_remapped.gam -t $THREADS -i ${OS}/${GAM_PREFIX}_remapped_sorted.gam.gai >  ${OS}/${GAM_PREFIX}_remapped_sorted.gam
+    fi
 
-	 # Remap simulated reads to the control graph
-	 time vg map -d ./controls/primary -f ${OS}/${GAM_PREFIX}.fq.gz -i  -t $THREADS > ${OS}/${GAM_PREFIX}_remapped_primary.gam
-	 time vg gamsort ${OS}/${GAM_PREFIX}_remapped_primary.gam -t $THREADS -i ${OS}/${GAM_PREFIX}_remapped_primary_sorted.gam.gai >  ${OS}/${GAM_PREFIX}_remapped_primary_sorted.gam
+    if [[ ! -e ${OS}/${GAM_PREFIX}_remapped_primary_sorted.gam ]] ; then
+        # Remap simulated reads to the control graph
+        time vg map -d ./controls/primary -f ${OS}/${GAM_PREFIX}.fq.gz -i  -t $THREADS > ${OS}/${GAM_PREFIX}_remapped_primary.gam
+        time vg gamsort ${OS}/${GAM_PREFIX}_remapped_primary.gam -t $THREADS -i ${OS}/${GAM_PREFIX}_remapped_primary_sorted.gam.gai >  ${OS}/${GAM_PREFIX}_remapped_primary_sorted.gam
+    fi
 
-	 # bwa mapping
-	 time bwa mem ./hg38.fa ${OS}/${GAM_PREFIX}_bwa.fq.gz -p -t $THREADS | samtools view -bS - > ${OS}/${GAM_PREFIX}_bwa_remapped.bam
+    if [[ ! -e ${OS}/${GAM_PREFIX}_bwa_remapped.bam ]] ; then
+        # bwa mapping
+        time bwa mem ${HG38} ${OS}/${GAM_PREFIX}_bwa.fq.gz -p -t $THREADS | samtools view -bS - > ${OS}/${GAM_PREFIX}_bwa_remapped.bam
+    fi
 fi
 
 # run the calling and vcf evaluation
